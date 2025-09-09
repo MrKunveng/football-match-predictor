@@ -1,0 +1,23 @@
+[global]
+# Streamlit configuration for deployment
+developmentMode = false
+
+[server]
+# Server configuration
+headless = true
+port = 8501
+enableCORS = true
+enableXsrfProtection = true
+
+[browser]
+# Browser configuration
+gatherUsageStats = false
+serverAddress = "0.0.0.0"
+
+[theme]
+# Custom theme for the football app
+primaryColor = "#1f77b4"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+font = "sans serif"
