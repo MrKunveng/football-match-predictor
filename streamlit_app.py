@@ -17,6 +17,7 @@ import re
 from bs4 import BeautifulSoup
 import time as time_module
 import os
+import math
 
 # Import real scraper and LLM analyzer
 try:
@@ -700,9 +701,9 @@ def get_poisson_prediction(home_team: str, away_team: str, match_date: str, matc
         for away_goals in range(6):
             # Poisson probability for this scoreline
             prob = (np.exp(-home_expected_goals) * (home_expected_goals ** home_goals) / 
-                   np.math.factorial(home_goals)) * \
+                   math.factorial(home_goals)) * \
                    (np.exp(-away_expected_goals) * (away_expected_goals ** away_goals) / 
-                   np.math.factorial(away_goals))
+                   math.factorial(away_goals))
             
             if home_goals > away_goals:
                 home_win_prob += prob
