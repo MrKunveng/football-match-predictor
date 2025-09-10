@@ -19,6 +19,12 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import openai
 import os
 from dataclasses import dataclass
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 # Try to import configuration
 try:
@@ -35,10 +41,10 @@ except ImportError:
         'Football365': 'https://www.football365.com/feed/',
     }
     FIXTURE_SOURCES = {
+        'SofaScore': 'https://www.sofascore.com',
+        'FotMob': 'https://www.fotmob.com',
         'ESPN': 'https://www.espn.com/soccer/fixtures',
-        'BBC Sport': 'https://www.bbc.com/sport/football/fixtures',
-        'Sky Sports': 'https://www.skysports.com/football/fixtures',
-        'FlashScore': 'https://www.flashscore.com/football/',
+        'BBC Sport': 'https://www.bbc.com/sport/football/scores-fixtures',
     }
 
 # Configure logging
@@ -70,7 +76,7 @@ class NewsArticle:
 class RealFootballScraper:
     """Real web scraper for football fixtures and news."""
     
-    def __init__(self):
+    def __init__(self, use_selenium: bool = True):
         self.ua = UserAgent()
         self.session = requests.Session()
         self.session.headers.update({
@@ -81,12 +87,60 @@ class RealFootballScraper:
             'Connection': 'keep-alive',
         })
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
+        self.use_selenium = use_selenium
+        self.driver = None
         
         # News sources
         self.news_sources = NEWS_SOURCES
         
         # Fixture sources
         self.fixture_sources = FIXTURE_SOURCES
+        
+        # Setup Selenium if needed
+        if self.use_selenium:
+            self._setup_selenium()
+    
+    def _setup_selenium(self):
+        """Setup Selenium WebDriver."""
+        try:
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--window-size=1920,1080')
+            chrome_options.add_argument(f'--user-agent={self.ua.random}')
+            
+            self.driver = webdriver.Chrome(options=chrome_options)
+            self.driver.implicitly_wait(10)
+            logger.info("Selenium WebDriver initialized successfully")
+        except Exception as e:
+            logger.warning(f"Failed to setup Selenium: {e}")
+            self.use_selenium = False
+    
+    def _get_page_selenium(self, url: str) -> BeautifulSoup:
+        """Get page content using Selenium."""
+        if not self.driver:
+            raise RuntimeError("Selenium driver not initialized")
+        
+        try:
+            self.driver.get(url)
+            
+            # Wait for page to load
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            
+            # Wait for dynamic content to load
+            time.sleep(3)
+            
+            return BeautifulSoup(self.driver.page_source, 'html.parser')
+        except TimeoutException:
+            logger.error(f"Timeout loading page: {url}")
+            raise
+        except WebDriverException as e:
+            logger.error(f"Selenium error: {e}")
+            raise
     
     def scrape_fixtures_for_date(self, target_date: date, leagues: List[str] = None) -> List[MatchFixture]:
         """Scrape fixtures for a specific date from multiple sources."""
@@ -116,35 +170,129 @@ class RealFootballScraper:
         fixtures = []
         
         try:
-            # Update headers for this request
-            headers = {
-                'User-Agent': self.ua.random,
-                'Referer': 'https://www.google.com/',
-            }
+            # Use Selenium for dynamic sites like SofaScore and FotMob
+            if self.use_selenium and self.driver and ('sofascore.com' in source_url or 'fotmob.com' in source_url):
+                soup = self._get_page_selenium(source_url)
+            else:
+                # Use requests for static sites
+                headers = {
+                    'User-Agent': self.ua.random,
+                    'Referer': 'https://www.google.com/',
+                }
+                
+                response = self.session.get(source_url, headers=headers, timeout=10)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.content, 'html.parser')
             
-            response = self.session.get(source_url, headers=headers, timeout=10)
-            response.raise_for_status()
+            # SofaScore scraping
+            if 'sofascore.com' in source_url:
+                fixtures = self._parse_sofascore_fixtures(soup, target_date, leagues)
             
-            soup = BeautifulSoup(response.content, 'html.parser')
+            # FotMob scraping
+            elif 'fotmob.com' in source_url:
+                fixtures = self._parse_fotmob_fixtures(soup, target_date, leagues)
             
             # ESPN scraping
-            if 'espn.com' in source_url:
+            elif 'espn.com' in source_url:
                 fixtures = self._parse_espn_fixtures(soup, target_date, leagues)
             
             # BBC Sport scraping
             elif 'bbc.com' in source_url:
                 fixtures = self._parse_bbc_fixtures(soup, target_date, leagues)
             
-            # Sky Sports scraping
-            elif 'skysports.com' in source_url:
-                fixtures = self._parse_sky_fixtures(soup, target_date, leagues)
-            
-            # FlashScore scraping
-            elif 'flashscore.com' in source_url:
-                fixtures = self._parse_flashscore_fixtures(soup, target_date, leagues)
-            
         except Exception as e:
             logger.error(f"Error scraping {source_url}: {e}")
+        
+        return fixtures
+    
+    def _parse_sofascore_fixtures(self, soup: BeautifulSoup, target_date: date, leagues: List[str]) -> List[MatchFixture]:
+        """Parse SofaScore fixtures."""
+        fixtures = []
+        
+        try:
+            # SofaScore uses specific class names for matches
+            match_containers = soup.find_all(['div', 'tr'], class_=re.compile(r'match|fixture|event'))
+            
+            for container in match_containers:
+                try:
+                    # Extract team names from SofaScore structure
+                    team_elements = container.find_all(['span', 'a'], class_=re.compile(r'team|participant'))
+                    if len(team_elements) >= 2:
+                        home_team = self._clean_team_name(team_elements[0].get_text(strip=True))
+                        away_team = self._clean_team_name(team_elements[1].get_text(strip=True))
+                    
+                    # Extract time
+                    time_elem = container.find(['span', 'div'], class_=re.compile(r'time|date|start'))
+                    match_time = time_elem.get_text(strip=True) if time_elem else "TBD"
+                    
+                    # Extract league/tournament
+                    league_elem = container.find(['span', 'div'], class_=re.compile(r'tournament|league|competition'))
+                    league = league_elem.get_text(strip=True) if league_elem else "Unknown"
+                    
+                    # Check if league is in our target leagues
+                    if any(target_league.lower() in league.lower() for target_league in leagues):
+                        fixture = MatchFixture(
+                            home_team=home_team,
+                            away_team=away_team,
+                            match_date=target_date.strftime('%Y-%m-%d'),
+                            match_time=match_time,
+                            league=league,
+                            venue="TBD"
+                        )
+                        fixtures.append(fixture)
+                
+                except Exception as e:
+                    logger.debug(f"Error parsing SofaScore fixture: {e}")
+                    continue
+        
+        except Exception as e:
+            logger.error(f"Error parsing SofaScore fixtures: {e}")
+        
+        return fixtures
+    
+    def _parse_fotmob_fixtures(self, soup: BeautifulSoup, target_date: date, leagues: List[str]) -> List[MatchFixture]:
+        """Parse FotMob fixtures."""
+        fixtures = []
+        
+        try:
+            # FotMob uses specific class names for matches
+            match_containers = soup.find_all(['div', 'li'], class_=re.compile(r'match|fixture|game'))
+            
+            for container in match_containers:
+                try:
+                    # Extract team names from FotMob structure
+                    team_elements = container.find_all(['span', 'div'], class_=re.compile(r'team|participant|name'))
+                    if len(team_elements) >= 2:
+                        home_team = self._clean_team_name(team_elements[0].get_text(strip=True))
+                        away_team = self._clean_team_name(team_elements[1].get_text(strip=True))
+                    
+                    # Extract time
+                    time_elem = container.find(['span', 'div'], class_=re.compile(r'time|date|start'))
+                    match_time = time_elem.get_text(strip=True) if time_elem else "TBD"
+                    
+                    # Extract league/tournament
+                    league_elem = container.find(['span', 'div'], class_=re.compile(r'tournament|league|competition'))
+                    league = league_elem.get_text(strip=True) if league_elem else "Unknown"
+                    
+                    # Check if league is in our target leagues
+                    if any(target_league.lower() in league.lower() for target_league in leagues):
+                        fixture = MatchFixture(
+                            home_team=home_team,
+                            away_team=away_team,
+                            match_date=target_date.strftime('%Y-%m-%d'),
+                            match_time=match_time,
+                            league=league,
+                            venue="TBD"
+                        )
+                        fixtures.append(fixture)
+                
+                except Exception as e:
+                    logger.debug(f"Error parsing FotMob fixture: {e}")
+                    continue
+        
+        except Exception as e:
+            logger.error(f"Error parsing FotMob fixtures: {e}")
         
         return fixtures
     
@@ -497,6 +645,17 @@ class RealFootballScraper:
                 unique_articles.append(article)
         
         return unique_articles
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.driver:
+            self.driver.quit()
+    
+    def __del__(self):
+        if self.driver:
+            self.driver.quit()
 
 class LLMNewsAnalyzer:
     """LLM-based news analysis for football predictions."""
@@ -609,6 +768,6 @@ class LLMNewsAnalyzer:
             "analysis_timestamp": datetime.now().isoformat()
         }
 
-# Global instances
-scraper = RealFootballScraper()
+# Global instances (disable Selenium by default to avoid Chrome driver dependency)
+scraper = RealFootballScraper(use_selenium=False)
 llm_analyzer = LLMNewsAnalyzer()
