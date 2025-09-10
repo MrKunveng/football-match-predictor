@@ -33,8 +33,9 @@ NEWS_SOURCES = {
 
 # Fixture Sources Configuration
 FIXTURE_SOURCES = {
-    'SofaScore': 'https://www.sofascore.com',
-    'FotMob': 'https://www.fotmob.com',
+    'SofaScore': 'https://www.sofascore.com/football',
+    'FotMob': 'https://www.fotmob.com/matches',
     'ESPN': 'https://www.espn.com/soccer/fixtures',
     'BBC Sport': 'https://www.bbc.com/sport/football/scores-fixtures',
+    'FlashScore': 'https://www.flashscore.com/football/',
 }
