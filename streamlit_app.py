@@ -72,38 +72,155 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Popular teams for dropdown
-POPULAR_TEAMS = {
-    "Premier League": [
-        "Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton & Hove Albion",
-        "Chelsea", "Crystal Palace", "Everton", "Fulham", "Leeds United",
-        "Leicester City", "Liverpool", "Manchester City", "Manchester United",
-        "Newcastle United", "Nottingham Forest", "Southampton", "Tottenham Hotspur",
-        "West Ham United", "Wolverhampton Wanderers"
+# Available leagues
+AVAILABLE_LEAGUES = [
+    "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", "Champions League"
+]
+
+# Sample fixture data (in a real app, this would come from scraping)
+SAMPLE_FIXTURES = {
+    "2025-09-13": [
+        {
+            "home_team": "Real Sociedad",
+            "away_team": "Real Madrid",
+            "match_time": "14:15",
+            "league": "La Liga",
+            "venue": "Reale Arena"
+        },
+        {
+            "home_team": "Manchester United",
+            "away_team": "Liverpool",
+            "match_time": "16:30",
+            "league": "Premier League",
+            "venue": "Old Trafford"
+        },
+        {
+            "home_team": "Bayern Munich",
+            "away_team": "Borussia Dortmund",
+            "match_time": "17:30",
+            "league": "Bundesliga",
+            "venue": "Allianz Arena"
+        },
+        {
+            "home_team": "Juventus",
+            "away_team": "AC Milan",
+            "match_time": "20:45",
+            "league": "Serie A",
+            "venue": "Allianz Stadium"
+        }
     ],
-    "La Liga": [
-        "Real Madrid", "Barcelona", "Atletico Madrid", "Sevilla", "Real Sociedad",
-        "Real Betis", "Villarreal", "Valencia", "Athletic Bilbao", "Osasuna",
-        "Rayo Vallecano", "Celta Vigo", "Mallorca", "Girona", "Getafe",
-        "Espanyol", "Cadiz", "Almeria", "Valladolid", "Elche"
+    "2025-09-14": [
+        {
+            "home_team": "Barcelona",
+            "away_team": "Atletico Madrid",
+            "match_time": "16:15",
+            "league": "La Liga",
+            "venue": "Camp Nou"
+        },
+        {
+            "home_team": "Arsenal",
+            "away_team": "Chelsea",
+            "match_time": "14:30",
+            "league": "Premier League",
+            "venue": "Emirates Stadium"
+        },
+        {
+            "home_team": "Paris Saint-Germain",
+            "away_team": "Marseille",
+            "match_time": "20:45",
+            "league": "Ligue 1",
+            "venue": "Parc des Princes"
+        },
+        {
+            "home_team": "Real Madrid",
+            "away_team": "Manchester City",
+            "match_time": "21:00",
+            "league": "Champions League",
+            "venue": "Santiago Bernabéu"
+        }
     ],
-    "Serie A": [
-        "Juventus", "AC Milan", "Inter Milan", "Napoli", "Atalanta",
-        "Roma", "Lazio", "Fiorentina", "Torino", "Bologna",
-        "Udinese", "Sassuolo", "Empoli", "Monza", "Lecce",
-        "Salernitana", "Spezia", "Verona", "Cremonese", "Sampdoria"
+    "2025-09-15": [
+        {
+            "home_team": "Liverpool",
+            "away_team": "Tottenham",
+            "match_time": "16:30",
+            "league": "Premier League",
+            "venue": "Anfield"
+        },
+        {
+            "home_team": "Inter Milan",
+            "away_team": "Napoli",
+            "match_time": "20:45",
+            "league": "Serie A",
+            "venue": "San Siro"
+        },
+        {
+            "home_team": "RB Leipzig",
+            "away_team": "Bayer Leverkusen",
+            "match_time": "17:30",
+            "league": "Bundesliga",
+            "venue": "Red Bull Arena"
+        },
+        {
+            "home_team": "Barcelona",
+            "away_team": "Bayern Munich",
+            "match_time": "21:00",
+            "league": "Champions League",
+            "venue": "Camp Nou"
+        }
     ],
-    "Bundesliga": [
-        "Bayern Munich", "Borussia Dortmund", "RB Leipzig", "Union Berlin",
-        "Freiburg", "Bayer Leverkusen", "Eintracht Frankfurt", "Wolfsburg",
-        "Mainz 05", "Borussia Mönchengladbach", "Cologne", "Werder Bremen",
-        "Bochum", "Augsburg", "VfB Stuttgart", "Hertha Berlin", "Schalke 04"
+    "2025-09-16": [
+        {
+            "home_team": "Manchester City",
+            "away_team": "Arsenal",
+            "match_time": "17:30",
+            "league": "Premier League",
+            "venue": "Etihad Stadium"
+        },
+        {
+            "home_team": "Sevilla",
+            "away_team": "Real Betis",
+            "match_time": "21:00",
+            "league": "La Liga",
+            "venue": "Ramón Sánchez-Pizjuán"
+        },
+        {
+            "home_team": "Lyon",
+            "away_team": "Monaco",
+            "match_time": "20:45",
+            "league": "Ligue 1",
+            "venue": "Groupama Stadium"
+        }
     ],
-    "Ligue 1": [
-        "Paris Saint-Germain", "Marseille", "Monaco", "Lens", "Rennes",
-        "Lille", "Lorient", "Clermont", "Lyon", "Toulouse",
-        "Reims", "Montpellier", "Troyes", "Brest", "Strasbourg",
-        "Nantes", "Auxerre", "Ajaccio", "Angers", "Nice"
+    "2025-09-17": [
+        {
+            "home_team": "Chelsea",
+            "away_team": "Newcastle",
+            "match_time": "15:00",
+            "league": "Premier League",
+            "venue": "Stamford Bridge"
+        },
+        {
+            "home_team": "Roma",
+            "away_team": "Lazio",
+            "match_time": "18:00",
+            "league": "Serie A",
+            "venue": "Stadio Olimpico"
+        },
+        {
+            "home_team": "Eintracht Frankfurt",
+            "away_team": "Wolfsburg",
+            "match_time": "15:30",
+            "league": "Bundesliga",
+            "venue": "Deutsche Bank Park"
+        },
+        {
+            "home_team": "Atletico Madrid",
+            "away_team": "Liverpool",
+            "match_time": "21:00",
+            "league": "Champions League",
+            "venue": "Wanda Metropolitano"
+        }
     ]
 }
 
@@ -111,18 +228,15 @@ POPULAR_TEAMS = {
 if 'predictions_history' not in st.session_state:
     st.session_state.predictions_history = []
 
-def get_prediction_from_api(home_team: str, away_team: str, match_date: date, match_time: time) -> Optional[Dict]:
+def get_prediction_from_api(home_team: str, away_team: str, match_date: str, match_time: str, league: str) -> Optional[Dict]:
     """Get prediction from the FastAPI backend."""
     try:
-        # Combine date and time
-        match_datetime = datetime.combine(match_date, match_time)
-        
         # Prepare request data
         request_data = {
             "home_team": home_team,
             "away_team": away_team,
-            "match_date": match_date.isoformat(),
-            "league": "premier_league",  # Default league
+            "match_date": match_date,
+            "league": league.lower().replace(" ", "_"),
             "include_confidence": True
         }
         
@@ -139,16 +253,16 @@ def get_prediction_from_api(home_team: str, away_team: str, match_date: date, ma
                 return None
         except requests.exceptions.ConnectionError:
             # Fallback to mock prediction if API is not available
-            return get_mock_prediction(home_team, away_team, match_datetime)
+            return get_mock_prediction(home_team, away_team, match_date, match_time, league)
             
     except Exception as e:
         st.error(f"Error getting prediction: {e}")
         return None
 
-def get_mock_prediction(home_team: str, away_team: str, match_datetime: datetime) -> Dict:
+def get_mock_prediction(home_team: str, away_team: str, match_date: str, match_time: str, league: str) -> Dict:
     """Generate a mock prediction when API is not available."""
     # Simple mock prediction based on team names
-    np.random.seed(hash(home_team + away_team) % 2**32)
+    np.random.seed(hash(home_team + away_team + league) % 2**32)
     
     # Generate realistic probabilities
     home_prob = np.random.beta(2, 3)  # Slightly favor home team
@@ -169,7 +283,9 @@ def get_mock_prediction(home_team: str, away_team: str, match_datetime: datetime
     return {
         "home_team": home_team,
         "away_team": away_team,
-        "match_date": match_datetime.date().isoformat(),
+        "match_date": match_date,
+        "match_time": match_time,
+        "league": league,
         "predictions": {
             "home_win": round(home_prob, 3),
             "draw": round(draw_prob, 3),
@@ -190,10 +306,15 @@ def display_prediction_result(prediction: Dict, chart_key: str = ""):
     st.markdown('<div class="prediction-card">', unsafe_allow_html=True)
     
     # Match info
+    match_time = prediction.get('match_time', 'TBD')
+    league = prediction.get('league', 'Unknown')
+    venue = prediction.get('venue', 'TBD')
+    
     st.markdown(f"""
     <div class="match-info">
         <div class="team-name">{prediction['home_team']} vs {prediction['away_team']}</div>
-        <p><strong>Match Date:</strong> {prediction['match_date']}</p>
+        <p><strong>Date:</strong> {prediction['match_date']} | <strong>Time:</strong> {match_time}</p>
+        <p><strong>League:</strong> {league} | <strong>Venue:</strong> {venue}</p>
         <p><strong>Predicted Outcome:</strong> {prediction['predicted_outcome']}</p>
         <p><strong>Confidence:</strong> {prediction['confidence']:.1%}</p>
         <p><strong>Model Used:</strong> {prediction['model_used']}</p>
@@ -288,113 +409,165 @@ def main():
     st.markdown("""
     <div style="text-align: center; margin-bottom: 2rem;">
         <p style="font-size: 1.2rem; color: #666;">
-            Predict football match outcomes using advanced machine learning models
+            Predict outcomes for scheduled football matches using AI
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Sidebar for input
+    # Sidebar for date selection
     with st.sidebar:
-        st.header("🎯 Match Details")
-        
-        # League selection
-        league = st.selectbox("Select League", list(POPULAR_TEAMS.keys()))
-        
-        # Team selection
-        home_team = st.selectbox("Home Team", POPULAR_TEAMS[league], key="home_team")
-        away_team = st.selectbox("Away Team", [team for team in POPULAR_TEAMS[league] if team != home_team], key="away_team")
-        
-        # Date and time selection
-        st.subheader("📅 Match Schedule")
+        st.header("📅 Select Match Date")
         
         # Date selection
-        match_date = st.date_input(
-            "Match Date",
-            value=date.today() + timedelta(days=1),
-            min_value=date.today(),
-            max_value=date.today() + timedelta(days=365)
+        selected_date = st.date_input(
+            "Choose Date",
+            value=date(2025, 9, 13),  # Default to a date with matches
+            min_value=date(2025, 9, 13),
+            max_value=date(2025, 9, 17)
         )
         
-        # Time selection
-        match_time = st.time_input(
-            "Match Time",
-            value=time(15, 0),  # Default 3:00 PM
-            step=timedelta(minutes=30)
+        # League filter
+        st.subheader("🏆 Filter by League")
+        selected_leagues = st.multiselect(
+            "Select Leagues",
+            options=AVAILABLE_LEAGUES,
+            default=AVAILABLE_LEAGUES
         )
         
         # Additional options
         st.subheader("⚙️ Options")
         show_confidence = st.checkbox("Show Confidence Analysis", value=True)
         save_prediction = st.checkbox("Save to History", value=True)
-        
-        # Predict button
-        predict_button = st.button("🔮 Predict Match Outcome", type="primary", use_container_width=True)
     
     # Main content area
-    if predict_button:
-        if home_team == away_team:
-            st.error("Please select different teams for home and away!")
-        else:
-            # Show loading spinner
-            with st.spinner("Analyzing match and generating prediction..."):
-                # Get prediction
-                prediction = get_prediction_from_api(home_team, away_team, match_date, match_time)
+    date_str = selected_date.strftime("%Y-%m-%d")
+    
+    # Get matches for selected date
+    if date_str in SAMPLE_FIXTURES:
+        matches = SAMPLE_FIXTURES[date_str]
+        
+        # Filter by selected leagues
+        if selected_leagues:
+            matches = [match for match in matches if match['league'] in selected_leagues]
+        
+        if matches:
+            st.subheader(f"🏟️ Matches on {selected_date.strftime('%B %d, %Y')}")
+            
+            # Group matches by league
+            matches_by_league = {}
+            for match in matches:
+                league = match['league']
+                if league not in matches_by_league:
+                    matches_by_league[league] = []
+                matches_by_league[league].append(match)
+            
+            # Display matches by league
+            for league, league_matches in matches_by_league.items():
+                st.markdown(f"### {league}")
                 
-                if prediction:
-                    # Display prediction
-                    st.success("✅ Prediction generated successfully!")
-                    display_prediction_result(prediction, chart_key="main")
-                    
-                    # Save to history if requested
-                    if save_prediction:
-                        st.session_state.predictions_history.append(prediction)
-                        st.success("💾 Prediction saved to history!")
-                    
-                    # Confidence analysis
-                    if show_confidence:
-                        st.subheader("📈 Confidence Analysis")
+                for i, match in enumerate(league_matches):
+                    with st.container():
+                        col1, col2, col3 = st.columns([3, 1, 1])
                         
-                        confidence = prediction['confidence']
-                        probs = prediction['predictions']
+                        with col1:
+                            st.markdown(f"""
+                            <div class="match-info">
+                                <div class="team-name">{match['home_team']} vs {match['away_team']}</div>
+                                <p><strong>Time:</strong> {match['match_time']} | <strong>Venue:</strong> {match['venue']}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
                         
-                        # Create confidence gauge
-                        fig_gauge = go.Figure(go.Indicator(
-                            mode = "gauge+number+delta",
-                            value = confidence * 100,
-                            domain = {'x': [0, 1], 'y': [0, 1]},
-                            title = {'text': "Prediction Confidence (%)"},
-                            delta = {'reference': 50},
-                            gauge = {
-                                'axis': {'range': [None, 100]},
-                                'bar': {'color': "darkblue"},
-                                'steps': [
-                                    {'range': [0, 40], 'color': "lightgray"},
-                                    {'range': [40, 70], 'color': "yellow"},
-                                    {'range': [70, 100], 'color': "green"}
-                                ],
-                                'threshold': {
-                                    'line': {'color': "red", 'width': 4},
-                                    'thickness': 0.75,
-                                    'value': 90
-                                }
-                            }
-                        ))
+                        with col2:
+                            if st.button(f"🔮 Predict", key=f"predict_{league}_{i}"):
+                                with st.spinner("Generating prediction..."):
+                                    prediction = get_prediction_from_api(
+                                        match['home_team'], 
+                                        match['away_team'], 
+                                        date_str, 
+                                        match['match_time'], 
+                                        match['league']
+                                    )
+                                    
+                                    if prediction:
+                                        # Add venue to prediction
+                                        prediction['venue'] = match['venue']
+                                        
+                                        # Display prediction
+                                        st.success("✅ Prediction generated!")
+                                        display_prediction_result(prediction, chart_key=f"match_{league}_{i}")
+                                        
+                                        # Save to history if requested
+                                        if save_prediction:
+                                            st.session_state.predictions_history.append(prediction)
+                                            st.success("💾 Saved to history!")
+                                        
+                                        # Confidence analysis
+                                        if show_confidence:
+                                            st.subheader("📈 Confidence Analysis")
+                                            
+                                            confidence = prediction['confidence']
+                                            probs = prediction['predictions']
+                                            
+                                            # Create confidence gauge
+                                            fig_gauge = go.Figure(go.Indicator(
+                                                mode = "gauge+number+delta",
+                                                value = confidence * 100,
+                                                domain = {'x': [0, 1], 'y': [0, 1]},
+                                                title = {'text': "Prediction Confidence (%)"},
+                                                delta = {'reference': 50},
+                                                gauge = {
+                                                    'axis': {'range': [None, 100]},
+                                                    'bar': {'color': "darkblue"},
+                                                    'steps': [
+                                                        {'range': [0, 40], 'color': "lightgray"},
+                                                        {'range': [40, 70], 'color': "yellow"},
+                                                        {'range': [70, 100], 'color': "green"}
+                                                    ],
+                                                    'threshold': {
+                                                        'line': {'color': "red", 'width': 4},
+                                                        'thickness': 0.75,
+                                                        'value': 90
+                                                    }
+                                                }
+                                            ))
+                                            
+                                            fig_gauge.update_layout(height=300)
+                                            st.plotly_chart(fig_gauge, use_container_width=True, key=f"confidence_gauge_{league}_{i}")
+                                            
+                                            # Probability distribution pie chart
+                                            fig_pie = px.pie(
+                                                values=list(probs.values()),
+                                                names=list(probs.keys()),
+                                                title="Outcome Probability Distribution",
+                                                color_discrete_map={
+                                                    'home_win': '#1f77b4',
+                                                    'draw': '#ff7f0e',
+                                                    'away_win': '#2ca02c'
+                                                }
+                                            )
+                                            st.plotly_chart(fig_pie, use_container_width=True, key=f"probability_pie_{league}_{i}")
                         
-                        fig_gauge.update_layout(height=300)
-                        st.plotly_chart(fig_gauge, use_container_width=True, key="confidence_gauge")
+                        with col3:
+                            # Quick prediction preview
+                            if st.button(f"👁️ Preview", key=f"preview_{league}_{i}"):
+                                # Generate quick preview
+                                preview_pred = get_mock_prediction(
+                                    match['home_team'], 
+                                    match['away_team'], 
+                                    date_str, 
+                                    match['match_time'], 
+                                    match['league']
+                                )
+                                preview_pred['venue'] = match['venue']
+                                
+                                # Show quick preview
+                                st.info(f"Quick Preview: {preview_pred['predicted_outcome']} ({preview_pred['confidence']:.1%})")
                         
-                        # Probability distribution pie chart
-                        fig_pie = px.pie(
-                            values=list(probs.values()),
-                            names=list(probs.keys()),
-                            title="Outcome Probability Distribution",
-                            color_discrete_map={
-                                'home_win': '#1f77b4',
-                                'draw': '#ff7f0e',
-                                'away_win': '#2ca02c'
-                            }
-                        )
-                        st.plotly_chart(fig_pie, use_container_width=True, key="probability_pie")
+                        st.markdown("---")
+        else:
+            st.info(f"No matches found for {selected_date.strftime('%B %d, %Y')} in the selected leagues.")
+    else:
+        st.info(f"No matches scheduled for {selected_date.strftime('%B %d, %Y')}.")
     
     # Display prediction history
     display_prediction_history()
