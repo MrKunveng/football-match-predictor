@@ -11,6 +11,7 @@ numpy>=1.24.0
 
 # HTTP requests for API calls
 requests>=2.31.0
+beautifulsoup4>=4.12.0
 
 # Optional: For enhanced functionality
 # Uncomment if you want to include ML models directly in the app
