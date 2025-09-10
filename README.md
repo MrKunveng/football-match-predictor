@@ -4,8 +4,12 @@ A beautiful, interactive web application for predicting football match outcomes 
 
 ## 🚀 Features
 
-- **Interactive Match Prediction**: Select teams, date, and time for predictions
-- **Multiple Leagues**: Support for Premier League, La Liga, Serie A, Bundesliga, and Ligue 1
+- **Scheduled Match Display**: View real football fixtures with predetermined times and venues
+- **Multiple Leagues**: Support for Premier League, La Liga, Serie A, Bundesliga, Ligue 1, and Champions League
+- **Date-Based Browsing**: Select any date to see scheduled matches for that day
+- **League Filtering**: Filter matches by specific leagues
+- **Individual Predictions**: Get AI predictions for each scheduled match
+- **Quick Previews**: Instant prediction previews without full analysis
 - **Visual Predictions**: Beautiful charts showing probability distributions
 - **Confidence Analysis**: Gauge charts and confidence indicators
 - **Prediction History**: Save and view your prediction history
@@ -13,11 +17,12 @@ A beautiful, interactive web application for predicting football match outcomes 
 
 ## 🎯 How to Use
 
-1. **Select League**: Choose from popular European leagues
-2. **Pick Teams**: Select home and away teams from dropdown menus
-3. **Set Schedule**: Choose match date and time
-4. **Get Prediction**: Click "Predict Match Outcome" to get AI-powered predictions
+1. **Select Date**: Choose a date from the sidebar to view scheduled matches
+2. **Filter Leagues**: Use the league filter to show only specific competitions
+3. **View Matches**: See all scheduled matches with times, venues, and teams
+4. **Get Predictions**: Click "🔮 Predict" for detailed AI analysis or "👁️ Preview" for quick results
 5. **View Results**: See probabilities, confidence levels, and visualizations
+6. **Save History**: Your predictions are automatically saved for future reference
 
 ## 🛠️ Deployment on Streamlit Community Cloud
 
