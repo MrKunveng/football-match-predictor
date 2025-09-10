@@ -16,6 +16,15 @@ import logging
 import re
 from bs4 import BeautifulSoup
 import time as time_module
+import os
+
+# Import real scraper and LLM analyzer
+try:
+    from real_scraper import scraper, llm_analyzer, MatchFixture, NewsArticle
+    REAL_SCRAPER_AVAILABLE = True
+except ImportError as e:
+    st.warning(f"Real scraper not available: {e}")
+    REAL_SCRAPER_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -237,115 +246,102 @@ if 'scraped_fixtures' not in st.session_state:
 if 'last_scrape_time' not in st.session_state:
     st.session_state.last_scrape_time = None
 
-def scrape_football_data_api():
-    """Scrape football fixtures from API-Football (free tier)."""
+def scrape_real_fixtures(target_date: date, leagues: List[str] = None) -> List[Dict]:
+    """Scrape real fixtures using the comprehensive scraper."""
+    if not REAL_SCRAPER_AVAILABLE:
+        st.warning("Real scraper not available. Using sample data.")
+        return []
+    
     try:
-        # Using a free API endpoint (you can replace with your own API key)
-        url = "https://api.football-data.org/v4/matches"
-        headers = {
-            'X-Auth-Token': 'YOUR_API_KEY',  # Replace with actual API key
-            'Content-Type': 'application/json'
-        }
+        # Use the real scraper
+        fixtures = scraper.scrape_fixtures_for_date(target_date, leagues)
         
-        # For demo purposes, we'll use a mock response
-        # In production, you would use the actual API
-        return None
+        # Convert MatchFixture objects to dictionaries
+        fixture_dicts = []
+        for fixture in fixtures:
+            fixture_dicts.append({
+                'home_team': fixture.home_team,
+                'away_team': fixture.away_team,
+                'match_time': fixture.match_time,
+                'league': fixture.league,
+                'venue': fixture.venue
+            })
         
+        return fixture_dicts
+    
     except Exception as e:
-        logger.error(f"API scraping failed: {e}")
-        return None
+        logger.error(f"Error scraping real fixtures: {e}")
+        return []
 
-def scrape_espn_fixtures():
-    """Scrape fixtures from ESPN (fallback method)."""
+def scrape_news_for_teams(teams: List[str], days_back: int = 7) -> List[Dict]:
+    """Scrape news articles for specific teams."""
+    if not REAL_SCRAPER_AVAILABLE:
+        return []
+    
     try:
-        # ESPN fixtures URL
-        url = "https://www.espn.com/soccer/fixtures"
+        # Use the real scraper to get news
+        articles = scraper.scrape_news_for_teams(teams, days_back)
         
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+        # Convert NewsArticle objects to dictionaries
+        article_dicts = []
+        for article in articles:
+            article_dicts.append({
+                'title': article.title,
+                'content': article.content,
+                'url': article.url,
+                'published_date': article.published_date,
+                'source': article.source,
+                'sentiment_score': article.sentiment_score,
+                'relevance_score': article.relevance_score
+            })
         
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        fixtures = []
-        
-        # Parse ESPN fixture data
-        # This is a simplified parser - you'd need to adjust based on ESPN's current structure
-        match_elements = soup.find_all('div', class_='Table__TR')
-        
-        for match in match_elements:
-            try:
-                teams = match.find_all('a', class_='AnchorLink')
-                if len(teams) >= 2:
-                    home_team = teams[0].text.strip()
-                    away_team = teams[1].text.strip()
-                    
-                    # Extract time and date (this would need to be more sophisticated)
-                    time_element = match.find('span', class_='date__col')
-                    match_time = time_element.text.strip() if time_element else "TBD"
-                    
-                    fixtures.append({
-                        'home_team': home_team,
-                        'away_team': away_team,
-                        'match_time': match_time,
-                        'league': 'Unknown',
-                        'venue': 'TBD'
-                    })
-            except Exception as e:
-                continue
-        
-        return fixtures
-        
+        return article_dicts
+    
     except Exception as e:
-        logger.error(f"ESPN scraping failed: {e}")
-        return None
+        logger.error(f"Error scraping news: {e}")
+        return []
 
-def scrape_football365_fixtures():
-    """Scrape fixtures from Football365."""
-    try:
-        url = "https://www.football365.com/fixtures"
-        
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+def analyze_news_with_llm(home_team: str, away_team: str, articles: List[Dict]) -> Dict:
+    """Analyze news articles using LLM."""
+    if not REAL_SCRAPER_AVAILABLE or not articles:
+        return {
+            "form_analysis": "No news analysis available",
+            "key_factors": "Standard match factors",
+            "prediction": "Home",
+            "confidence": 0.5,
+            "risks": "Standard risks"
         }
+    
+    try:
+        # Convert dictionaries back to NewsArticle objects
+        news_articles = []
+        for article_dict in articles:
+            news_articles.append(NewsArticle(
+                title=article_dict['title'],
+                content=article_dict['content'],
+                url=article_dict['url'],
+                published_date=article_dict['published_date'],
+                source=article_dict['source'],
+                sentiment_score=article_dict['sentiment_score'],
+                relevance_score=article_dict['relevance_score']
+            ))
         
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        fixtures = []
-        
-        # Parse Football365 fixture data
-        # This is a simplified parser
-        match_elements = soup.find_all('div', class_='fixture')
-        
-        for match in match_elements:
-            try:
-                home_team_elem = match.find('span', class_='home-team')
-                away_team_elem = match.find('span', class_='away-team')
-                time_elem = match.find('span', class_='time')
-                
-                if home_team_elem and away_team_elem:
-                    fixtures.append({
-                        'home_team': home_team_elem.text.strip(),
-                        'away_team': away_team_elem.text.strip(),
-                        'match_time': time_elem.text.strip() if time_elem else "TBD",
-                        'league': 'Unknown',
-                        'venue': 'TBD'
-                    })
-            except Exception as e:
-                continue
-        
-        return fixtures
-        
+        # Use LLM analyzer
+        analysis = llm_analyzer.analyze_news_for_match(home_team, away_team, news_articles)
+        return analysis
+    
     except Exception as e:
-        logger.error(f"Football365 scraping failed: {e}")
-        return None
+        logger.error(f"Error in LLM analysis: {e}")
+        return {
+            "form_analysis": "Analysis failed",
+            "key_factors": "Standard match factors",
+            "prediction": "Home",
+            "confidence": 0.5,
+            "risks": "Standard risks"
+        }
 
 def get_real_fixtures_for_date(target_date: date):
-    """Get real fixtures for a specific date using multiple sources."""
+    """Get real fixtures for a specific date using the comprehensive scraper."""
     date_str = target_date.strftime("%Y-%m-%d")
     
     # Check if we have cached data (less than 1 hour old)
@@ -356,26 +352,21 @@ def get_real_fixtures_for_date(target_date: date):
     
     fixtures = []
     
-    # Try multiple sources
-    sources = [
-        scrape_football_data_api,
-        scrape_espn_fixtures,
-        scrape_football365_fixtures
-    ]
-    
-    for source_func in sources:
+    # Use the real scraper if available
+    if REAL_SCRAPER_AVAILABLE:
         try:
-            scraped_fixtures = source_func()
-            if scraped_fixtures:
-                fixtures.extend(scraped_fixtures)
-                break  # Use first successful source
+            fixtures = scrape_real_fixtures(target_date)
+            if fixtures:
+                # Cache the results
+                st.session_state.scraped_fixtures[date_str] = fixtures
+                st.session_state.last_scrape_time = datetime.now()
+                return fixtures
         except Exception as e:
-            logger.error(f"Source {source_func.__name__} failed: {e}")
-            continue
+            logger.warning(f"Real scraping failed: {e}")
     
-    # If scraping fails, return enhanced sample data with more realistic fixtures
-    if not fixtures:
-        fixtures = get_enhanced_sample_fixtures(target_date)
+    # Fallback to enhanced sample data
+    logger.info("Using enhanced sample data as fallback")
+    fixtures = get_enhanced_sample_fixtures(target_date)
     
     # Cache the results
     st.session_state.scraped_fixtures[date_str] = fixtures
@@ -754,23 +745,30 @@ def get_poisson_prediction(home_team: str, away_team: str, match_date: str, matc
     }
 
 def get_ensemble_prediction(home_team: str, away_team: str, match_date: str, match_time: str, league: str) -> Dict:
-    """Generate ensemble prediction combining multiple models."""
+    """Generate ensemble prediction combining multiple models and LLM news analysis."""
     
     # Get predictions from different models
     elo_pred = get_advanced_prediction(home_team, away_team, match_date, match_time, league)
     poisson_pred = get_poisson_prediction(home_team, away_team, match_date, match_time, league)
     
-    # Weight the models (Elo gets more weight as it's more reliable)
-    elo_weight = 0.7
+    # Get LLM news analysis
+    news_analysis = get_llm_enhanced_prediction(home_team, away_team, match_date, match_time, league)
+    
+    # Weight the models (Elo gets more weight, LLM analysis adds intelligence)
+    elo_weight = 0.5
     poisson_weight = 0.3
+    llm_weight = 0.2
     
     # Combine predictions
     combined_home = (elo_pred["predictions"]["home_win"] * elo_weight + 
-                    poisson_pred["predictions"]["home_win"] * poisson_weight)
+                    poisson_pred["predictions"]["home_win"] * poisson_weight +
+                    news_analysis["predictions"]["home_win"] * llm_weight)
     combined_draw = (elo_pred["predictions"]["draw"] * elo_weight + 
-                    poisson_pred["predictions"]["draw"] * poisson_weight)
+                    poisson_pred["predictions"]["draw"] * poisson_weight +
+                    news_analysis["predictions"]["draw"] * llm_weight)
     combined_away = (elo_pred["predictions"]["away_win"] * elo_weight + 
-                    poisson_pred["predictions"]["away_win"] * poisson_weight)
+                    poisson_pred["predictions"]["away_win"] * poisson_weight +
+                    news_analysis["predictions"]["away_win"] * llm_weight)
     
     # Normalize
     total = combined_home + combined_draw + combined_away
@@ -786,6 +784,7 @@ def get_ensemble_prediction(home_team: str, away_team: str, match_date: str, mat
     # Combine model details
     combined_details = elo_pred.get("model_details", {}).copy()
     combined_details.update(poisson_pred.get("model_details", {}))
+    combined_details.update(news_analysis.get("model_details", {}))
     
     return {
         "home_team": home_team,
@@ -800,9 +799,68 @@ def get_ensemble_prediction(home_team: str, away_team: str, match_date: str, mat
         },
         "predicted_outcome": predicted_outcome,
         "confidence": round(confidence, 3),
-        "model_used": "Ensemble (Elo + Poisson)",
+        "model_used": "Ensemble (Elo + Poisson + LLM News)",
         "timestamp": datetime.now().isoformat(),
-        "model_details": combined_details
+        "model_details": combined_details,
+        "news_analysis": news_analysis.get("news_analysis", {})
+    }
+
+def get_llm_enhanced_prediction(home_team: str, away_team: str, match_date: str, match_time: str, league: str) -> Dict:
+    """Get LLM-enhanced prediction based on news analysis."""
+    
+    # Scrape news for the teams
+    teams = [home_team, away_team]
+    articles = scrape_news_for_teams(teams, days_back=7)
+    
+    # Analyze news with LLM
+    news_analysis = analyze_news_with_llm(home_team, away_team, articles)
+    
+    # Convert LLM analysis to prediction probabilities
+    # This is a simplified conversion - in practice, you'd want more sophisticated logic
+    llm_prediction = news_analysis.get("prediction", "Home")
+    llm_confidence = news_analysis.get("confidence", 0.5)
+    
+    # Convert to probabilities
+    if llm_prediction == "Home":
+        home_win = llm_confidence
+        draw = (1 - llm_confidence) * 0.3
+        away_win = (1 - llm_confidence) * 0.7
+    elif llm_prediction == "Away":
+        away_win = llm_confidence
+        draw = (1 - llm_confidence) * 0.3
+        home_win = (1 - llm_confidence) * 0.7
+    else:  # Draw
+        draw = llm_confidence
+        home_win = (1 - llm_confidence) * 0.5
+        away_win = (1 - llm_confidence) * 0.5
+    
+    # Normalize
+    total = home_win + draw + away_win
+    home_win /= total
+    draw /= total
+    away_win /= total
+    
+    return {
+        "home_team": home_team,
+        "away_team": away_team,
+        "match_date": match_date,
+        "match_time": match_time,
+        "league": league,
+        "predictions": {
+            "home_win": round(home_win, 3),
+            "draw": round(draw, 3),
+            "away_win": round(away_win, 3)
+        },
+        "predicted_outcome": llm_prediction,
+        "confidence": round(llm_confidence, 3),
+        "model_used": "LLM News Analysis",
+        "timestamp": datetime.now().isoformat(),
+        "model_details": {
+            "articles_analyzed": len(articles),
+            "avg_sentiment": sum(a.get("sentiment_score", 0) for a in articles) / max(len(articles), 1),
+            "news_confidence": llm_confidence
+        },
+        "news_analysis": news_analysis
     }
 
 def get_mock_prediction(home_team: str, away_team: str, match_date: str, match_time: str, league: str) -> Dict:
@@ -855,6 +913,42 @@ def display_prediction_result(prediction: Dict, chart_key: str = ""):
                 st.warning("Close match")
             else:
                 st.info("Moderate favorite")
+    
+    # Show news analysis if available
+    news_analysis = prediction.get('news_analysis', {})
+    if news_analysis and news_analysis.get('form_analysis'):
+        st.markdown("#### 📰 News Analysis")
+        
+        # Form analysis
+        st.markdown("**Recent Form & News:**")
+        st.info(news_analysis.get('form_analysis', 'No analysis available'))
+        
+        # Key factors
+        if news_analysis.get('key_factors'):
+            st.markdown("**Key Factors:**")
+            st.warning(news_analysis.get('key_factors', 'Standard factors'))
+        
+        # Risks
+        if news_analysis.get('risks'):
+            st.markdown("**Risk Factors:**")
+            st.error(news_analysis.get('risks', 'Standard risks'))
+        
+        # News metrics
+        if model_details.get('articles_analyzed', 0) > 0:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Articles Analyzed", model_details.get('articles_analyzed', 0))
+            with col2:
+                sentiment = model_details.get('avg_sentiment', 0)
+                st.metric("Avg Sentiment", f"{sentiment:.2f}")
+                if sentiment > 0.1:
+                    st.success("Positive sentiment")
+                elif sentiment < -0.1:
+                    st.error("Negative sentiment")
+                else:
+                    st.info("Neutral sentiment")
+            with col3:
+                st.metric("News Confidence", f"{model_details.get('news_confidence', 0):.2f}")
     
     # Probability breakdown
     probs = prediction['predictions']
@@ -975,11 +1069,12 @@ def main():
             "Choose Prediction Model",
             options=[
                 "Ensemble (Recommended)",
+                "LLM News Analysis",
                 "Elo + Form + H2H",
                 "Poisson Distribution",
                 "Simple Random"
             ],
-            help="Ensemble model combines multiple algorithms for best accuracy"
+            help="Ensemble model combines multiple algorithms including LLM news analysis for best accuracy"
         )
         
         # Additional options
@@ -1039,6 +1134,14 @@ def main():
                                 # Choose prediction method based on user selection
                                 if model_choice == "Ensemble (Recommended)":
                                     prediction = get_ensemble_prediction(
+                                        match['home_team'], 
+                                        match['away_team'], 
+                                        date_str, 
+                                        match['match_time'], 
+                                        match['league']
+                                    )
+                                elif model_choice == "LLM News Analysis":
+                                    prediction = get_llm_enhanced_prediction(
                                         match['home_team'], 
                                         match['away_team'], 
                                         date_str, 
@@ -1135,6 +1238,14 @@ def main():
                             # Generate quick preview using selected model
                             if model_choice == "Ensemble (Recommended)":
                                 preview_pred = get_ensemble_prediction(
+                                    match['home_team'], 
+                                    match['away_team'], 
+                                    date_str, 
+                                    match['match_time'], 
+                                    match['league']
+                                )
+                            elif model_choice == "LLM News Analysis":
+                                preview_pred = get_llm_enhanced_prediction(
                                     match['home_team'], 
                                     match['away_team'], 
                                     date_str, 

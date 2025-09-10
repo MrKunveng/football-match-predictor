@@ -13,6 +13,25 @@ numpy>=1.24.0
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 
+# LLM and AI analysis
+openai>=1.0.0
+anthropic>=0.7.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+tiktoken>=0.5.0
+
+# News and sentiment analysis
+feedparser>=6.0.0
+newspaper3k>=0.2.8
+textblob>=0.17.0
+vaderSentiment>=3.3.0
+
+# Web scraping enhancements
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+fake-useragent>=1.4.0
+lxml>=4.9.0
+
 # Optional: For enhanced functionality
 # Uncomment if you want to include ML models directly in the app
 # scikit-learn>=1.3.0
