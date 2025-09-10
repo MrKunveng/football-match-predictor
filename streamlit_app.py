@@ -181,7 +181,7 @@ def get_mock_prediction(home_team: str, away_team: str, match_datetime: datetime
         "timestamp": datetime.now().isoformat()
     }
 
-def display_prediction_result(prediction: Dict):
+def display_prediction_result(prediction: Dict, chart_key: str = ""):
     """Display prediction results in a nice format."""
     if not prediction:
         return
@@ -245,7 +245,7 @@ def display_prediction_result(prediction: Dict):
         height=400
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key=f"prob_chart_{chart_key}")
     
     # Confidence indicator
     confidence = prediction['confidence']
@@ -276,8 +276,9 @@ def display_prediction_history():
     
     # Display recent predictions
     for i, pred in enumerate(reversed(st.session_state.predictions_history[-5:])):
-        with st.expander(f"Match {len(st.session_state.predictions_history) - i}: {pred['home_team']} vs {pred['away_team']}"):
-            display_prediction_result(pred)
+        match_id = len(st.session_state.predictions_history) - i
+        with st.expander(f"Match {match_id}: {pred['home_team']} vs {pred['away_team']}"):
+            display_prediction_result(pred, chart_key=f"history_{match_id}")
 
 def main():
     """Main Streamlit application."""
@@ -342,7 +343,7 @@ def main():
                 if prediction:
                     # Display prediction
                     st.success("✅ Prediction generated successfully!")
-                    display_prediction_result(prediction)
+                    display_prediction_result(prediction, chart_key="main")
                     
                     # Save to history if requested
                     if save_prediction:
@@ -380,7 +381,7 @@ def main():
                         ))
                         
                         fig_gauge.update_layout(height=300)
-                        st.plotly_chart(fig_gauge, use_container_width=True)
+                        st.plotly_chart(fig_gauge, use_container_width=True, key="confidence_gauge")
                         
                         # Probability distribution pie chart
                         fig_pie = px.pie(
@@ -393,7 +394,7 @@ def main():
                                 'away_win': '#2ca02c'
                             }
                         )
-                        st.plotly_chart(fig_pie, use_container_width=True)
+                        st.plotly_chart(fig_pie, use_container_width=True, key="probability_pie")
     
     # Display prediction history
     display_prediction_history()
