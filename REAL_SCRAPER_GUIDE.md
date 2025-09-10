@@ -57,11 +57,12 @@ OPENAI_API_KEY = "your_openai_api_key_here"
 ## 📊 How It Works
 
 ### Real Web Scraping Process
-1. **Source Selection**: Tries multiple sources in order
+1. **Source Selection**: Tries SofaScore, FotMob, ESPN, BBC Sport in order
 2. **Data Extraction**: Parses HTML for team names, times, leagues
-3. **Team Standardization**: Maps team names to consistent format
-4. **Deduplication**: Removes duplicate fixtures
-5. **Caching**: Stores results for 1 hour
+3. **Selenium Support**: Handles dynamic content from modern sites
+4. **Team Standardization**: Maps team names to consistent format
+5. **Deduplication**: Removes duplicate fixtures
+6. **Caching**: Stores results for 1 hour
 
 ### LLM News Analysis Process
 1. **News Scraping**: Collects articles from RSS feeds
@@ -126,10 +127,10 @@ OPENAI_API_KEY = "your_openai_api_key_here"
 ## 🔍 Data Sources
 
 ### Fixture Sources
-- **ESPN**: Comprehensive fixture data
+- **SofaScore**: Comprehensive fixture data and live scores
+- **FotMob**: Essential football app with detailed match data
+- **ESPN**: International sports coverage
 - **BBC Sport**: UK-focused coverage
-- **Sky Sports**: Premier League focus
-- **FlashScore**: International coverage
 
 ### News Sources
 - **BBC Sport**: Reliable UK sports news
